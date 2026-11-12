@@ -1,3 +1,7 @@
+---
+layout: null
+title: Peptide & Hormone Database
+---
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,90 +17,97 @@
       padding: 2rem 1rem;
     }
     #catalog-container {
-      max-width: 1000px;
+      max-width: 1400px;
       margin: 0 auto;
     }
     h1 {
       margin-top: 0;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
     }
     .controls {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
+      align-items: center;
     }
-    .search, #category-filter {
-      padding: 0.6rem 0.8rem;
+    .search {
+      flex: 1 1 300px;
+      padding: 0.65rem 0.9rem;
       border: 1px solid #ced4da;
       border-radius: 6px;
       font-size: 1rem;
       background: #fff;
     }
-    .search {
-      flex: 1 1 250px;
-    }
-    .sort {
-      padding: 0.6rem 1rem;
-      border: 1px solid #ced4da;
+    .count-badge {
+      font-size: 0.9rem;
+      color: #495057;
+      background: #e9ecef;
+      padding: 0.5rem 0.85rem;
       border-radius: 6px;
-      background-color: #fff;
-      cursor: pointer;
-      font-size: 0.95rem;
       font-weight: 500;
     }
-    .sort:hover {
-      background-color: #e9ecef;
-    }
-    .list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.25rem;
-    }
-    .list li {
+    .table-wrapper {
+      overflow-x: auto;
       background: #ffffff;
       border: 1px solid #dee2e6;
       border-radius: 8px;
-      padding: 1.25rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-      display: flex;
-      flex-direction: column;
     }
-    .item-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 8px;
-      margin-bottom: 0.5rem;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
     }
-    .name {
-      margin: 0;
-      font-size: 1.15rem;
-    }
-    .category {
-      display: inline-block;
-      background: #e7f1ff;
-      color: #0d6efd;
-      font-size: 0.75rem;
+    th {
+      background-color: #f1f3f5;
+      color: #212529;
       font-weight: 600;
-      padding: 0.25rem 0.6rem;
-      border-radius: 999px;
+      padding: 0.85rem 1rem;
+      border-bottom: 2px solid #dee2e6;
+      cursor: pointer;
+      user-select: none;
       white-space: nowrap;
     }
-    .price {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #198754;
-      margin: 0.25rem 0 0.75rem 0;
+    th:hover {
+      background-color: #e9ecef;
     }
-    .description {
-      margin: 0;
-      font-size: 0.95rem;
-      color: #495057;
-      line-height: 1.4;
+    th::after {
+      content: " ↕";
+      font-size: 0.8em;
+      color: #868e96;
+    }
+    td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #dee2e6;
+      vertical-align: top;
+    }
+    tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+    .pagination {
+      display: flex;
+      list-style: none;
+      padding: 0;
+      margin: 1.25rem 0 0 0;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .pagination li a {
+      display: block;
+      padding: 0.45rem 0.8rem;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      background: #fff;
+      color: #0d6efd;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .pagination li.active a {
+      background: #0d6efd;
+      color: #fff;
+      border-color: #0d6efd;
     }
     #no-results {
       display: none;
@@ -111,66 +122,77 @@
   <div id="catalog-container">
     <h1>{{ page.title }}</h1>
 
-    <!-- Search, Filter & Sort Controls -->
+    <!-- Search & Row Counter -->
     <div class="controls">
-      <input class="search" placeholder="Search by name, category, or description..." />
-      
-      <select id="category-filter">
-        <option value="">All Categories</option>
-        {% assign categories = site.data.catalog | map: "category" | uniq | sort %}
-        {% for cat in categories %}
-          {% if cat != "" and cat != nil %}
-            <option value="{{ cat }}">{{ cat }}</option>
-          {% endif %}
-        {% endfor %}
-      </select>
-
-      <button class="sort" data-sort="name">Sort by Name</button>
-      <button class="sort" data-sort="price">Sort by Price</button>
+      <input class="search" placeholder="Search across all peptide, UniProt, hormone, and sequence fields..." />
+      <span class="count-badge">Showing <span id="visible-count">{{ site.data.catalog.size }}</span> of {{ site.data.catalog.size }} entries</span>
     </div>
 
-    <!-- Catalog Grid -->
-    <ul class="list">
-      {% for item in site.data.catalog %}
-        <li>
-          <div class="item-header">
-            <h3 class="name">{{ item.name }}</h3>
-            <span class="category">{{ item.category }}</span>
-          </div>
-          <p class="price">${{ item.price }}</p>
-          <p class="description">{{ item.description }}</p>
-        </li>
-      {% endfor %}
-    </ul>
+    <!-- Responsive Data Table -->
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th class="sort" data-sort="peptidedb">Unique PeptideDB entries</th>
+            <th class="sort" data-sort="uniprot">Unique UniProt entries</th>
+            <th class="sort" data-sort="endonet">EndoNet entries</th>
+            <th class="sort" data-sort="fragments">Fragments; known hormones or unidentified</th>
+            <th class="sort" data-sort="hormones">Known hormones</th>
+            <th class="sort" data-sort="propeptides">Pro-peptides or known hormone proforms</th>
+            <th class="sort" data-sort="transcripts">Transcripts</th>
+            <th class="sort" data-sort="entries">Entries</th>
+            <th class="sort" data-sort="sequences">Sequence entries</th>
+          </tr>
+        </thead>
+        <tbody class="list">
+          {% for item in site.data.catalog %}
+            <tr>
+              <td class="peptidedb">{{ item["Unique PeptideDB entries"] }}</td>
+              <td class="uniprot">{{ item["Unique UniProt entries"] }}</td>
+              <td class="endonet">{{ item["EndoNet entries"] }}</td>
+              <td class="fragments">{{ item["Fragments; known hormones or unidentified"] }}</td>
+              <td class="hormones">{{ item["Known hormones"] }}</td>
+              <td class="propeptides">{{ item["Pro-peptides or known hormone proforms"] }}</td>
+              <td class="transcripts">{{ item["Transcripts "] | default: item["Transcripts"] }}</td>
+              <td class="entries">{{ item["Entries"] }}</td>
+              <td class="sequences">{{ item["Sequence entries"] }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div id="no-results">No matching entries found.</div>
+    </div>
 
-    <div id="no-results">No matching items found.</div>
+    <!-- Pagination (50 rows per page for fast browsing) -->
+    <ul class="pagination"></ul>
   </div>
 
   <!-- Load List.js from cdnjs -->
   <script src="https://cloudflare.com"></script>
   <script>
     var options = {
-      valueNames: [ 'name', 'category', 'price', 'description' ]
+      valueNames: [
+        'peptidedb',
+        'uniprot',
+        'endonet',
+        'fragments',
+        'hormones',
+        'propeptides',
+        'transcripts',
+        'entries',
+        'sequences'
+      ],
+      page: 50,
+      pagination: true
     };
 
     var catalogList = new List('catalog-container', options);
 
-    // Category dropdown filter
-    var categoryFilter = document.getElementById('category-filter');
-    categoryFilter.addEventListener('change', function() {
-      var selectedCategory = this.value;
-      if (selectedCategory === "") {
-        catalogList.filter();
-      } else {
-        catalogList.filter(function(item) {
-          return item.values().category.trim() === selectedCategory;
-        });
-      }
-    });
-
-    // Show message when search/filter returns 0 items
+    // Update visible count and toggle "No results" message
     catalogList.on('updated', function(list) {
       var noResults = document.getElementById('no-results');
+      var countSpan = document.getElementById('visible-count');
+      countSpan.textContent = list.matchingItems.length;
       noResults.style.display = (list.matchingItems.length === 0) ? 'block' : 'none';
     });
   </script>
